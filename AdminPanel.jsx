@@ -7,6 +7,7 @@ const ACTION_LABELS = {
   grant_admin: "Admin-Rechte vergeben",
   revoke_admin: "Admin-Rechte entzogen",
   cancel_booking: "Fremde Buchung storniert",
+  password_reset: "Passwort-Reset gesendet",
 };
 
 // Zwei-Klick-Bestätigung für heikle Aktionen (Admin entfernen, fremde
@@ -47,6 +48,7 @@ export default function AdminPanel({ myUserId, onClose }) {
   const [log, setLog] = useState(null);
   const [busyId, setBusyId] = useState(null);
   const [error, setError] = useState(null);
+  const [notice, setNotice] = useState(null);
 
   const loadUsers = async () => {
     const { data, error: err } = await supabase
@@ -81,6 +83,7 @@ export default function AdminPanel({ myUserId, onClose }) {
 
   useEffect(() => {
     setError(null);
+    setNotice(null);
     if (tab === "users" && users === null) loadUsers();
     if (tab === "bookings" && bookings === null) loadBookings();
     if (tab === "log" && log === null) loadLog();
@@ -102,6 +105,39 @@ export default function AdminPanel({ myUserId, onClose }) {
       return;
     }
     await loadUsers();
+  };
+
+  // Schickt der Person die normale "Passwort vergessen"-Mail. Die
+  // E-Mail-Adresse liefert nur die Datenbank-Funktion, und nur an Admins;
+  // sie protokolliert den Vorgang auch gleich. Das neue Passwort legt die
+  // Person selbst fest -- der Admin sieht es nie.
+  const sendPasswordReset = async (user) => {
+    setBusyId(user.id);
+    setError(null);
+    setNotice(null);
+    const { data: email, error: rpcErr } = await supabase.rpc("admin_password_reset_email", {
+      target: user.id,
+    });
+    if (rpcErr || !email) {
+      setBusyId(null);
+      setError("E-Mail-Adresse konnte nicht ermittelt werden.");
+      return;
+    }
+    const { error: mailErr } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + window.location.pathname,
+    });
+    setBusyId(null);
+    if (mailErr) {
+      const limit = mailErr.status === 429 || /rate limit/i.test(mailErr.message || "");
+      setError(
+        limit
+          ? "Mail-Limit erreicht. Ohne eigenen Mailversand sind nur wenige Mails pro Stunde möglich – bitte später erneut versuchen."
+          : `Mail konnte nicht gesendet werden: ${mailErr.message}`
+      );
+      return;
+    }
+    setNotice(`Mail zum Zurücksetzen an ${user.display_name} gesendet.`);
+    setLog(null); // Protokoll beim nächsten Öffnen neu laden
   };
 
   const cancelBooking = async (booking) => {
@@ -152,6 +188,7 @@ export default function AdminPanel({ myUserId, onClose }) {
         </div>
 
         {error && <div className="modal-error">{error}</div>}
+        {notice && <div className="admin-notice">{notice}</div>}
 
         <div className="admin-body">
           {tab === "users" &&
@@ -173,13 +210,21 @@ export default function AdminPanel({ myUserId, onClose }) {
                         <span className="admin-row-note">Du verlierst danach deinen eigenen Zugriff.</span>
                       )}
                     </div>
-                    <ConfirmButton
-                      label={u.is_admin ? "Entfernen" : "Admin machen"}
-                      confirmLabel="Wirklich?"
-                      danger={u.is_admin}
-                      disabled={busyId === u.id}
-                      onConfirm={() => toggleAdmin(u)}
-                    />
+                    <div className="admin-row-actions">
+                      <ConfirmButton
+                        label="Passwort-Reset"
+                        confirmLabel="Mail senden?"
+                        disabled={busyId === u.id}
+                        onConfirm={() => sendPasswordReset(u)}
+                      />
+                      <ConfirmButton
+                        label={u.is_admin ? "Entfernen" : "Admin machen"}
+                        confirmLabel="Wirklich?"
+                        danger={u.is_admin}
+                        disabled={busyId === u.id}
+                        onConfirm={() => toggleAdmin(u)}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
