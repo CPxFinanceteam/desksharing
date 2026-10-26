@@ -5,7 +5,7 @@ import { getBookingHorizon } from "./dateUtils";
 import { BOOKING_DAYS, DAY_ROLLOVER_CHECK_MS } from "./config";
 
 /** Anzahl ganztägig buchbarer Plätze (Besprechungsraum zählt nicht mit). */
-export const FULLDAY_RESOURCE_COUNT = RESOURCES.filter((r) => !r.timeBased).length;
+export const FULLDAY_RESOURCE_COUNT = RESOURCES.filter((r) => !r.timeBased && !r.blocked).length;
 
 /**
  * Lädt die Buchungen des aktuellen Zeitraums, hält sie per Live-Verbindung
@@ -100,7 +100,7 @@ export function useBookings(userId, onToast) {
 
   /** Wie viele ganztägige Plätze am gewählten Tag belegt sind. */
   const bookedFullDayCount = useMemo(
-    () => RESOURCES.filter((r) => !r.timeBased && byResource[r.id]?.length).length,
+    () => RESOURCES.filter((r) => !r.timeBased && !r.blocked && byResource[r.id]?.length).length,
     [byResource]
   );
 

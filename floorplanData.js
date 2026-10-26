@@ -22,13 +22,21 @@ export const GROUPS_RIGHT = [
   { id: "OFF_L", label: "Büro (groß)", kind: "room-fullday", flex: 1.3, desks: 1 },
 ];
 
+// Dauerhaft gesperrte Plätze: werden im Grundriss immer als belegt (rot)
+// angezeigt, sind nicht anklickbar und zählen nicht als buchbarer Platz.
+// "L3-3" = Gruppe 3, Platz 3 (linke Spalte, dritter Platz von unten).
+// Zum Freigeben die ID hier entfernen UND in Supabase den Constraint
+// "chk_not_blocked" anpassen (siehe sperre-und-passwort-reset.sql).
+export const BLOCKED_RESOURCE_IDS = new Set(["L3-3"]);
+
 // Flache Liste aller einzeln buchbaren Einheiten (resource_id in der Tabelle "bookings")
 export function buildResourceList() {
   const list = [];
   const addGroup = (group) => {
     for (let i = 1; i <= group.desks; i++) {
+      const id = group.desks > 1 ? `${group.id}-${i}` : group.id;
       list.push({
-        id: group.desks > 1 ? `${group.id}-${i}` : group.id,
+        id,
         groupId: group.id,
         groupLabel: group.label,
         seat: group.desks > 1 ? i : null,
@@ -36,6 +44,7 @@ export function buildResourceList() {
           group.desks > 1 ? `${group.label}, Platz ${i}` : group.label,
         kind: group.kind, // 'desk-group' | 'room-fullday' | 'room-timed'
         timeBased: group.kind === "room-timed",
+        blocked: BLOCKED_RESOURCE_IDS.has(id),
       });
     }
   };
