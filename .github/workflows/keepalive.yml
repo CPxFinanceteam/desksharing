@@ -12,13 +12,11 @@ jobs:
       - name: Supabase anpingen
         run: |
           code=$(curl -s -o /dev/null -w "%{http_code}" \
-            "https://owfyrxjtbwkrqplvvuiy.supabase.co/auth/v1/health" \
-            -H "apikey: $KEY")
+            "https://xmvdejqjifcsljpiqofp.supabase.co/auth/v1/health" \
+            -H "apikey: sb_publishable_lIXZfFu6lxW7Lyh1lXWbZg_8O_Inxmv")
           echo "HTTP-Status: $code"
           if [ "$code" != "200" ]; then
             echo "Ping fehlgeschlagen"
             exit 1
           fi
           echo "Supabase ist erreichbar."
-        env:
-          KEY: ${{ secrets.SUPABASE_ANON_KEY }}
