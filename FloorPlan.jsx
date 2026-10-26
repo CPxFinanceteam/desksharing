@@ -38,9 +38,10 @@ function statusOf(bookings, id, myUserId) {
 // Ein Schreibtisch mit Stuhl. chairSide = "above" | "below".
 // Der Stuhl sitzt immer an der LANGEN Tischseite (oben oder unten).
 function Desk({ id, x, y, chairSide, bookings, myUserId, onSelect }) {
-  const { status, entries } = statusOf(bookings, id, myUserId);
   const resource = RESOURCES.find((r) => r.id === id);
   if (!resource) return null;
+  if (resource.blocked) return <BlockedDesk resource={resource} x={x} y={y} chairSide={chairSide} />;
+  const { status, entries } = statusOf(bookings, id, myUserId);
 
   const chairX = x + DESK_W / 2;
   const chairY =
@@ -77,6 +78,20 @@ function Desk({ id, x, y, chairSide, bookings, myUserId, onSelect }) {
           strokeLinejoin="round"
         />
       )}
+    </g>
+  );
+}
+
+// Dauerhaft gesperrter Platz: immer rot, ohne Namen, nicht anklickbar.
+function BlockedDesk({ resource, x, y, chairSide }) {
+  const chairX = x + DESK_W / 2;
+  const chairY =
+    chairSide === "above" ? y - CHAIR_R - 4 : y + DESK_H + CHAIR_R + 4;
+  return (
+    <g className="fp-desk fp-booked fp-blocked" aria-label={`${resource.label}: nicht buchbar`}>
+      <title>{`${resource.label} – nicht buchbar`}</title>
+      <rect x={x} y={y} width={DESK_W} height={DESK_H} rx="2" className="fp-desk-top" fillOpacity={0.18} />
+      <circle cx={chairX} cy={chairY} r={CHAIR_R} className="fp-chair" />
     </g>
   );
 }
