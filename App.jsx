@@ -15,6 +15,7 @@ import MeetingRoomModal from "./MeetingRoomModal";
 import MyBookingsPanel from "./MyBookingsPanel";
 import WhoIsInPanel from "./WhoIsInPanel";
 import AdminPanel from "./AdminPanel";
+import ChangePasswordModal from "./ChangePasswordModal";
 
 /** Kurze Rückmeldung unten am Bildschirm ("Gebucht.", "Storniert."). */
 function useToast() {
@@ -130,6 +131,9 @@ export default function App() {
                   Admin-Bereich
                 </button>
               )}
+              <button className="btn-secondary" onClick={() => setModal({ type: "password" })}>
+                Passwort ändern
+              </button>
               <button className="btn-secondary" onClick={auth.logout}>
                 Logout
               </button>
@@ -223,6 +227,8 @@ export default function App() {
       {modal?.type === "admin" && auth.isAdmin && (
         <AdminPanel myUserId={auth.userId} onClose={dismissModal} />
       )}
+
+      {modal?.type === "password" && <ChangePasswordModal onClose={dismissModal} />}
 
       {toast.message && <div className="toast">{toast.message}</div>}
     </div>

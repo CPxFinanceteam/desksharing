@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { supabase } from "./supabaseClient";
 
-export default function ResetPasswordForm() {
+export default function ResetPasswordForm({ onDone }) {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -29,7 +29,14 @@ export default function ResetPasswordForm() {
       <div className="name-gate-form">
         <label style={{ fontWeight: 700 }}>Neues Passwort setzen</label>
         {done ? (
-          <p className="modal-info">Passwort gesetzt! Du bist jetzt eingeloggt.</p>
+          <>
+            <p className="modal-info">Passwort gesetzt! Du bist jetzt eingeloggt.</p>
+            {onDone && (
+              <button type="button" className="btn-primary" onClick={onDone}>
+                Weiter zur App
+              </button>
+            )}
+          </>
         ) : (
           <form onSubmit={submit}>
             {error && <div className="modal-error">{error}</div>}
